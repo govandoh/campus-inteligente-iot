@@ -1,0 +1,8 @@
+# Fin de línea LF en todo (Mosquitto y los contenedores Linux no aceptan CRLF)
+* text=auto eol=lf
+*.pkt binary
+*.pka binary
+*.pdf binary
+*.docx binary
+*.png binary
+*.jpg binary

@@ -1,0 +1,19 @@
+# Bridge Mosquitto ⇄ broker público, para usar Wokwi (el simulador no ve su red local).
+# Para activarlo: copie este archivo a conf.d/bridge-wokwi.conf y reinicie:
+#   docker compose restart mosquitto
+# Los datos en un broker público son visibles para cualquiera: úselo solo con datos de prueba.
+connection wokwi-hivemq
+address broker.hivemq.com:1883
+clientid umg-campus-bridge-g5
+cleansession true
+try_private false
+notifications false
+start_type automatic
+restart_timeout 5 30
+
+# topic <patrón> <sentido> <qos> <prefijo-local> <prefijo-remoto>
+topic +/+/telemetry in 0 campus/iot/ umg-teleco-2026-g5/campus/iot/
+topic +/+/status in 1 campus/iot/ umg-teleco-2026-g5/campus/iot/
+topic +/+/motion in 0 campus/iot/ umg-teleco-2026-g5/campus/iot/
+topic +/+/ack in 0 campus/iot/ umg-teleco-2026-g5/campus/iot/
+topic +/+/cmd out 1 campus/iot/ umg-teleco-2026-g5/campus/iot/

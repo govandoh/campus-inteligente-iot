@@ -1,0 +1,4 @@
+# Librerías que Wokwi instala automáticamente
+PubSubClient
+DHT sensor library
+Adafruit Unified Sensor

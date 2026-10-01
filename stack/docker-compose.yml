@@ -1,0 +1,114 @@
+# Stack IoT del Campus Universitario Inteligente
+#   docker compose up -d --build              → Mosquitto + Plataforma (dashboard en http://localhost:3100)
+#   docker compose --profile grafana up -d    → + InfluxDB + Telegraf + Grafana (http://localhost:3101)
+name: campus-iot
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: campus-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"   # MQTT (ESP32, bridge Wokwi, plataforma)
+      - "9001:9001"   # MQTT sobre WebSockets (depuración con MQTT Explorer)
+    environment:
+      PLATFORM_PASS: ${MQTT_PLATFORM_PASS}
+      ESP32_PASS: ${MQTT_ESP32_PASS}
+      TELEGRAF_PASS: ${MQTT_TELEGRAF_PASS}
+    # Genera el archivo de contraseñas (hash) en cada arranque a partir del .env
+    command:
+      - sh
+      - -c
+      - |
+        rm -f /mosquitto/data/passwd
+        mosquitto_passwd -c -b /mosquitto/data/passwd platform "$$PLATFORM_PASS"
+        mosquitto_passwd -b /mosquitto/data/passwd esp32 "$$ESP32_PASS"
+        mosquitto_passwd -b /mosquitto/data/passwd telegraf "$$TELEGRAF_PASS"
+        cp /mosquitto/config/acl /mosquitto/data/acl
+        chown mosquitto:mosquitto /mosquitto/data/passwd /mosquitto/data/acl
+        chmod 0600 /mosquitto/data/passwd /mosquitto/data/acl
+        exec /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+      - mosquitto-data:/mosquitto/data
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -u platform -P \"$$PLATFORM_PASS\" -t '$$SYS/broker/uptime' -C 1 -W 3"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  platform:
+    build: ../platform
+    container_name: campus-platform
+    restart: unless-stopped
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    ports:
+      - "3100:3100"   # Dashboard + API + puente Packet Tracer (/api/ingest)
+    environment:
+      PORT: 3100
+      MQTT_URL: mqtt://mosquitto:1883
+      MQTT_USER: platform
+      MQTT_PASS: ${MQTT_PLATFORM_PASS}
+      SIM_MQTT_USER: esp32
+      SIM_MQTT_PASS: ${MQTT_ESP32_PASS}
+      SIMULATE: ${SIMULATE:-0}
+      DB_PATH: /data/campus-iot.db
+      TZ: America/Guatemala
+    volumes:
+      - platform-data:/data
+
+  # ───────────── Perfil opcional: Grafana (evidencia "clásica" del enunciado) ─────────────
+  influxdb:
+    image: influxdb:2.7
+    container_name: campus-influxdb
+    profiles: ["grafana"]
+    restart: unless-stopped
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUX_ADMIN_PASS}
+      DOCKER_INFLUXDB_INIT_ORG: umg
+      DOCKER_INFLUXDB_INIT_BUCKET: campus
+      DOCKER_INFLUXDB_INIT_RETENTION: 30d
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUX_TOKEN}
+    ports:
+      - "8086:8086"
+    volumes:
+      - influx-data:/var/lib/influxdb2
+
+  telegraf:
+    image: telegraf:1.32
+    container_name: campus-telegraf
+    profiles: ["grafana"]
+    restart: unless-stopped
+    depends_on: [mosquitto, influxdb]
+    environment:
+      MQTT_TELEGRAF_PASS: ${MQTT_TELEGRAF_PASS}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: campus-grafana
+    profiles: ["grafana"]
+    restart: unless-stopped
+    depends_on: [influxdb]
+    ports:
+      - "3101:3000"   # Grafana (interno 3000)
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASS}
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/campus-iot.json
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  mosquitto-data:
+  platform-data:
+  influx-data:
+  grafana-data:

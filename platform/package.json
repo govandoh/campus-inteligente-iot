@@ -1,0 +1,41 @@
+{
+  "name": "campus-iot-platform",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Plataforma IoT del Campus Universitario Inteligente (UMG) — ingesta MQTT, historial y dashboard en tiempo real",
+  "scripts": {
+    "dev": "concurrently -k -n server,web -c blue,magenta \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "node --watch server/index.js",
+    "dev:web": "vite web",
+    "build": "vite build web",
+    "start": "node server/index.js",
+    "demo": "node server/index.js --embedded-broker --simulate",
+    "simulate": "node server/simulator.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "aedes": "^1.2.0",
+    "mqtt": "^5.16.0"
+  },
+  "devDependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@number-flow/react": "^0.6.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "clsx": "^2.1.1",
+    "concurrently": "^10.0.5",
+    "liveline": "^0.0.7",
+    "motion": "^13.4.6",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "sonner": "^2.0.8",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "zustand": "^5.0.15"
+  }
+}

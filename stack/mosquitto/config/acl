@@ -1,0 +1,22 @@
+# ACL de Mosquitto — principio de mínimo privilegio por usuario
+
+# Plataforma: lee todo el árbol del campus y publica comandos / reingesta de Packet Tracer
+user platform
+topic readwrite campus/#
+topic read $SYS/#
+
+# Telegraf (Grafana): solo lectura de telemetría
+user telegraf
+topic read campus/iot/#
+
+# Dispositivos ESP32: solo publican sus datos y solo leen sus comandos
+user esp32
+topic write campus/iot/+/+/telemetry
+topic write campus/iot/+/+/status
+topic write campus/iot/+/+/motion
+topic write campus/iot/+/+/ack
+topic read campus/iot/+/+/cmd
+
+# Escalado a 500 nodos: un usuario por dispositivo (%u = usuario MQTT = id del nodo):
+# pattern write campus/iot/+/%u/telemetry
+# pattern read  campus/iot/+/%u/cmd

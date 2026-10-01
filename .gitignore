@@ -1,0 +1,17 @@
+# Credenciales
+firmware/**/config.h
+!wokwi/config.h
+stack/.env
+
+# Node / build
+node_modules/
+platform/web/dist/
+platform/data/
+*.db
+*.db-wal
+*.db-shm
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/
