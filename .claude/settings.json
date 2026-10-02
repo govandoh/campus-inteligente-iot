@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "deny": [
+      "mcp__packet-tracer__pt_send_raw"
+    ]
+  }
+}

@@ -15,3 +15,6 @@ platform/data/
 .DS_Store
 Thumbs.db
 .vscode/
+
+# MCP de Packet Tracer: ruta local de cada máquina
+.mcp.json
