@@ -1,5 +1,6 @@
 ! =====================================================================
-!  Capa 1 (Packet Tracer) — configuración pendiente de pegar en la CLI
+!  Capa 1 (Packet Tracer) — YA APLICADA en Campus-UMG-Final.pkt (1 oct, vía MCP)
+!  Se conserva como referencia y para reaplicarla si alguien parte de un .pkt viejo.
 !  Archivo: Campus-UMG-Final.pkt · Direccionamiento REAL del .pkt:
 !    VLAN 60 IoT 10.10.2.0/25 · SRV-SERVICIOS 10.10.4.2 (DNS/NTP/Syslog/MQTT)
 !    VLAN 10 ADMIN 10.10.3.0/25 · VLAN 99 MGMT 10.10.4.32/27

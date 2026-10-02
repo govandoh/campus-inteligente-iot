@@ -39,44 +39,51 @@ Lo que **sí** existe (Packet Tracer 7.2 en adelante) es una salida controlada: 
 
 **Lo que ya existía en el `.pkt`:** VLAN 60 en todos los switches, SVI `Vlan60` 10.10.2.1/25 y pool DHCP `VLAN60_IOT` en el SW‑CORE. También la PC `IOT-ESP32` cableada en SW‑E4 Fa0/2 (10.10.2.11) y la `ACL-IOT` escrita **pero sin aplicar**.
 
-**Lo que se agregó con el MCP (ya guardado en el `.pkt`):**
+**Lo que se configuró con el MCP (ya guardado en el `.pkt`, 1 de octubre):**
 
-- `AP-IOT` (AccessPoint‑PT), conectado a **SW‑E4 Fa0/11** (puerto en access VLAN 60, encendido).
-- `ESP32-SBC` (SBC‑PT), que ya trae interfaz inalámbrica (`Wireless3`).
+- `AP-IOT` (AccessPoint‑PT) en **SW‑E4 Fa0/11** (access VLAN 60, portfast). En la vista física quedó en la oficina, no en el rack.
+- `ESP32-SBC` (SBC‑PT). Se cambió su módulo inalámbrico a **PT‑IOT‑NM‑1W** (2.4 GHz, como un ESP32 real).
 - `AP-E3`, movido de la VLAN 10 a la **VLAN 20** (SSID de personal según el diseño).
+- **SSID con WPA2‑PSK (AES)** en los cinco AP:
 
-**Pasos manuales en Packet Tracer (5 minutos):**
+  | AP | VLAN del puerto | SSID | Clave |
+  |---|---|---|---|
+  | AP-E1, AP-E2 | 30 | `CAMPUS-STUDENTS` | `Estudiantes-UMG-2026` |
+  | AP-E3 | 20 | `CAMPUS-STAFF` | `Personal-UMG-2026` |
+  | AP-E4 | 80 | `CAMPUS-GUEST` | `Invitados-UMG-2026` |
+  | AP-IOT | 60 | `CAMPUS-IOT` | `IoT-Campus-2026` |
 
-1. **AP-IOT** → *Config → Port 1*: SSID `CAMPUS-IOT`, autenticación **WPA2‑PSK**, clave `IoT-Campus-2026`, cifrado AES.
-2. **ESP32-SBC** → *Config → Wireless3*: SSID `CAMPUS-IOT`, WPA2‑PSK con la misma clave, IP **DHCP**. Debe recibir `10.10.2.x /25` → **captura de la prueba 5 (PT)**.
-3. Agregue tres sensores (*End Devices → Home/IoT*) y conéctelos al SBC con **IoT Custom Cable**:
+- **SW‑CORE:** `ACL-IOT` rehecha (se agregó NTP), `ACL-LABORATORIOS` y `ACL-VOZ` nuevas, y las seis ACL aplicadas `in` en sus SVI: Vlan20 `ACL-DOCENTES`, Vlan30 `ACL-ESTUDIANTES`, Vlan40 `ACL-LABORATORIOS`, Vlan60 `ACL-IOT`, Vlan70 `ACL-VOZ`, Vlan80 `ACL-INVITADOS`.
+- **SSH solo desde ADMIN (10.10.3.0/25) y MGMT (10.10.4.32/27)**: ACL estándar `SSH-GESTION` como `access-class` en `vty 0 4` y `vty 5 15` de R‑BORDE, SW‑CORE y SW‑E1 a SW‑E4. Se cerraron las `vty 5 15` de los 2960, que tenían `login` sin clave.
+- `write memory` en los seis equipos.
+
+El detalle de los comandos está en [`packet-tracer/capa1_cli.txt`](../packet-tracer/capa1_cli.txt) (ya aplicado; queda como referencia para el documento).
+
+**Pasos manuales que faltan en Packet Tracer (5 minutos):**
+
+1. **ESP32-SBC** → *Config → Wireless3*: SSID `CAMPUS-IOT`, **WPA2‑PSK**, clave `IoT-Campus-2026`, cifrado AES, IP **DHCP**. Debe recibir `10.10.2.x /25` → **captura de la prueba 5 (PT)**.
+   La API de scripts de PT no permite cambiar el perfil Wi‑Fi del cliente (devuelve `invalid vector subscript`), por eso este paso es manual. Si no asocia, acerque el SBC al AP‑IOT en la vista física y revise que el SSID y la clave estén escritos igual.
+2. Agregue tres sensores (*End Devices → Home/IoT*) y conéctelos al SBC con **IoT Custom Cable**:
    - `Temperature Sensor` → **A0**
    - `Humidity Sensor` → **A1** (si su versión no lo tiene, use un segundo *Temperature Sensor* y documente la sustitución)
    - `Motion Detector` → **D0**
-4. SSID de los otros AP, todos con WPA2‑PSK:
 
-   | AP | VLAN del puerto | SSID |
-   |---|---|---|
-   | AP-E1, AP-E2 | 30 | `CAMPUS-STUDENTS` |
-   | AP-E3 | 20 | `CAMPUS-STAFF` |
-   | AP-E4 | 80 | `CAMPUS-GUEST` |
-   | AP-IOT | 60 | `CAMPUS-IOT` |
+**Verificación (pruebas 3, 4 y 5) — resultados medidos en el `.pkt` el 1 de octubre:**
 
-5. Pegue en la CLI los bloques de [`packet-tracer/capa1_cli.txt`](../packet-tracer/capa1_cli.txt):
-   - Las **ACL de todas las VLAN aplicadas en las SVI** del SW‑CORE (incluye `ACL-IOT` en `Vlan60`).
-   - La restricción de **SSH** a ADMIN y MGMT en los 6 equipos.
-   - El portfast del puerto del AP‑IOT.
+| Desde | Hacia | Esperado | Resultado |
+|---|---|---|---|
+| IOT-ESP32 (VLAN 60) | 10.10.4.2 (SRV‑SERVICIOS) | ✔ responde | ✔ 4/4 |
+| IOT-ESP32 (VLAN 60) | 10.10.3.11 (PC‑ADM1) | ✘ bloqueado por `ACL-IOT` | ✔ 0/4 |
+| PC-ADM1, PC-DOC1, PC-LAB1 | 10.10.4.2 | ✔ responde | ✔ 4/4 |
+| PC-EST1 (VLAN 30) | 10.10.3.11 | ✘ bloqueado por `ACL-ESTUDIANTES` | ✔ 0/4 |
+| PC-INV1 (VLAN 80) | 10.10.3.11 | ✘ bloqueado por `ACL-INVITADOS` | ✔ 0/4 |
+| PC-ADM1 | `ssh -l adminredes 10.10.4.33` | ✔ pide contraseña | ✔ |
+| PC-EST1 | `ssh -l adminredes 10.10.4.33` | ✘ sin respuesta | ✔ |
+| ESP32-SBC | 10.10.4.2 y 10.10.3.11 | igual que IOT-ESP32 | pendiente del paso 1 |
 
-**Verificación (pruebas 3 y 5):**
+Para la captura de la prueba 3, en el SW‑CORE ejecute `show access-lists ACL-IOT`: muestra los contadores de cada regla. Capture todo para `evidencias/`.
 
-| Desde | Hacia | Esperado |
-|---|---|---|
-| ESP32-SBC o IOT-ESP32 | 10.10.4.2 (SRV‑SERVICIOS) | ✔ responde |
-| ESP32-SBC o IOT-ESP32 | 10.10.3.11 (PC‑ADM1) | ✘ bloqueado por `ACL-IOT` |
-| PC-ADM1 | SSH a 10.10.4.33 (SW‑CORE) | ✔ permitido |
-| PC-EST1 | SSH a 10.10.4.33 | ✘ bloqueado |
-
-En el SW‑CORE, `show access-lists ACL-IOT` muestra los contadores de cada regla. Capture todo para `evidencias/`.
+> Las ACL se aplican de entrada en la VLAN de origen, así que también cortan las respuestas: por ejemplo, un ping de ADMIN hacia un equipo IoT no regresa. Es lo esperado en este diseño, porque la VLAN 60 solo debe hablar con SRV‑SERVICIOS.
 
 > Nota: en Packet Tracer el SBC no tiene cliente MQTT real. La regla `eq 1883` se evidencia con los contadores de `show access-lists`; la conexión MQTT real se evidencia en la capa 3.
 

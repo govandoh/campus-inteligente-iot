@@ -43,11 +43,11 @@ Asignación según los roles del análisis inicial (sección 10). Se pueden inte
 
 | # | Tarea | Guía | Terminado cuando… |
 |---|---|---|---|
-| B1 | AP‑IOT (ya agregado en SW‑E4 Fa0/11, VLAN 60): SSID `CAMPUS-IOT`, WPA2‑PSK | PACKET_TRACER_IOT §Capa 1 | El AP transmite el SSID |
+| B1 | ~~AP‑IOT: SSID `CAMPUS-IOT`, WPA2‑PSK~~ **Hecho por MCP** (y los SSID de los otros 4 AP) | PACKET_TRACER_IOT §Capa 1 | — |
 | B2 | Pool DHCP de la VLAN 60 (gateway 10.10.2.1, /25) — ya existe en el `.pkt` | Plan VLSM | — |
 | B3 | SBC‑PT `ESP32-SBC` (ya agregado) por Wi‑Fi `CAMPUS-IOT` con DHCP | Capa 1, pasos 1–2 | El SBC tiene `10.10.2.x /25` → **captura prueba 5 (PT)** |
 | B4 | Sensores de temperatura, humedad y movimiento conectados al SBC (A0, A1, D0) | Capa 1, paso 3 | Los valores se ven en el SBC |
-| B5 | (Mario) Pegar `packet-tracer/capa1_cli.txt` en SW‑CORE y en los switches (ACL por VLAN + SSH) | Capa 1, paso 5 | `ping` del SBC a la VLAN 10 **falla**; `show access-lists` muestra coincidencias → **captura prueba 3** |
+| B5 | (Mario) ~~Pegar `capa1_cli.txt`~~ **Ya aplicado por MCP.** Solo tomar evidencias: ping del SBC/IOT‑ESP32 a 10.10.3.11 y `show access-lists ACL-IOT` en el SW‑CORE | Capa 1, verificación | `ping` a la VLAN 10 **falla** y `show access-lists` muestra coincidencias → **captura prueba 3** |
 | B6 | Activar *External Network Access from Device Scripts* y correr `sbc_puente_plataforma.py` | Capa 2 | `pt-sbc-lab-c1` aparece en el dashboard con etiqueta **Packet Tracer** |
 
 **Si B6 no funciona en su versión de PT:** anotar la versión y el error, y continuar. Es un extra y no bloquea ninguna prueba.
