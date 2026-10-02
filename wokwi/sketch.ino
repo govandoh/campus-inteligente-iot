@@ -3,11 +3,11 @@
  * Universidad Mariano Gálvez · Telecomunicaciones · 2026
  *
  * Sensores:  DHT22 (temperatura + humedad) en GPIO4, PIR HC-SR501 (movimiento) en GPIO27
- * Red:       Wi-Fi SSID CAMPUS-IOT → IP por DHCP en 10.10.3.0/25 (VLAN 60)
+ * Red:       Wi-Fi SSID CAMPUS-IOT → IP por DHCP en 10.10.2.0/25 (VLAN 60)
  * Protocolo: MQTT hacia Mosquitto (VLAN 50), con usuario/contraseña y Last Will
  *
  * Tópicos (campus/iot/<edificio>/<nodo>/…):
- *   telemetry  → JSON cada N s   {"temp":24.6,"hum":55.2,"motion":0,"rssi":-61,"ip":"10.10.3.25",…}
+ *   telemetry  → JSON cada N s   {"temp":24.6,"hum":55.2,"motion":0,"rssi":-61,"ip":"10.10.2.25",…}
  *   status     → retenido        {"state":"online",…}  /  {"state":"offline"} (Last Will)
  *   motion     → al instante     {"motion":1}  (flanco del PIR)
  *   cmd        ← comandos        {"interval":10} · {"identify":true} · {"reboot":true}

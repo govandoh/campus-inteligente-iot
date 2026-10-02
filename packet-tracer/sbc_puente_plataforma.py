@@ -24,7 +24,7 @@ from realhttp import *
 SERVER = "http://127.0.0.1:3100/api/ingest"   # plataforma corriendo en la misma PC
 NODE = "pt-sbc-lab-c1"
 BUILDING = "C"
-SIM_IP = "10.10.3.30"     # IP que el SBC obtuvo por DHCP DENTRO de la simulación (informativa)
+SIM_IP = "10.10.2.30"     # IP que el SBC obtuvo por DHCP DENTRO de la simulación (informativa)
 PERIOD_S = 5
 
 try:

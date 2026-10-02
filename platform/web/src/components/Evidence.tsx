@@ -3,17 +3,20 @@ import { useStore } from '../store';
 import { Alert, Check, Copy } from '../icons';
 import { SOURCE_LABEL, ago, useNow } from '../util';
 
-const ACL = `! SW-CORE (L3) — la VLAN 60 solo puede hablar MQTT con el broker (VLAN 50)
-ip access-list extended IOT-IN
- remark IoT -> broker MQTT (Mosquitto 10.10.5.70)
- permit tcp 10.10.3.0 0.0.0.127 host 10.10.5.70 eq 1883
+const ACL = `! SW-CORE (L3) — la VLAN 60 solo habla con SRV-SERVICIOS (DHCP, DNS, NTP, MQTT)
+ip access-list extended ACL-IOT
  permit udp any any eq bootps
- permit udp 10.10.3.0 0.0.0.127 host 10.10.5.66 eq domain
- permit udp 10.10.3.0 0.0.0.127 host 10.10.5.67 eq ntp
- deny   ip any any log
+ permit udp any any eq bootpc
+ permit udp any host 10.10.4.2 eq domain
+ permit udp any host 10.10.4.2 eq 123
+ permit tcp any host 10.10.4.2 eq 1883
+ permit tcp any host 10.10.4.2 eq www
+ permit icmp any host 10.10.4.2
+ deny   ip any 10.10.0.0 0.0.255.255
+ permit ip any any
 !
 interface Vlan60
- ip access-group IOT-IN in`;
+ ip access-group ACL-IOT in`;
 
 const TOPICS = [
   ['campus/iot/<edificio>/<nodo>/telemetry', 'ESP32 → broker', 'JSON cada N s: temp, hum, motion, rssi, ip…'],

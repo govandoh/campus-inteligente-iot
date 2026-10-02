@@ -32,8 +32,8 @@ export const config = {
   dbPath: env.DB_PATH ?? path.join(here, '..', 'data', 'campus-iot.db'),
   webDist: env.WEB_DIST ?? path.join(here, '..', 'web', 'dist'),
 
-  // Subred de la VLAN 60 (IoT) según el plan VLSM: 10.10.3.0/25.
-  iotSubnet: { network: env.IOT_NETWORK ?? '10.10.3.0', prefix: Number(env.IOT_PREFIX ?? 25) },
+  // Subred de la VLAN 60 (IoT) según el .pkt: 10.10.2.0/25.
+  iotSubnet: { network: env.IOT_NETWORK ?? '10.10.2.0', prefix: Number(env.IOT_PREFIX ?? 25) },
 
   // Umbrales de alerta por defecto (se pueden cambiar desde el dashboard).
   thresholds: {

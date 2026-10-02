@@ -82,7 +82,7 @@ export const useStore = create<Store>((set, get) => ({
   broker: null,
   thresholds: { tempHigh: 30, tempLow: 16, humHigh: 75, humLow: 25 },
   simulator: { available: false, running: false },
-  iotSubnet: '10.10.3.0/25',
+  iotSubnet: '10.10.2.0/25',
   series: {},
   lastPayload: {},
   pulse: {},

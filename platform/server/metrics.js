@@ -27,7 +27,7 @@ export const round1 = (n) => (n == null || Number.isNaN(n) ? null : Math.round(n
 const ipToInt = (ip) =>
   String(ip).split('.').reduce((acc, oct) => (acc << 8) + (Number(oct) & 255), 0) >>> 0;
 
-// ¿La IP pertenece a la subred indicada? (ej. 10.10.3.0/25 = VLAN 60)
+// ¿La IP pertenece a la subred indicada? (ej. 10.10.2.0/25 = VLAN 60)
 export function inSubnet(ip, { network, prefix }) {
   if (!ip || !/^\d+\.\d+\.\d+\.\d+$/.test(ip)) return false;
   const mask = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;

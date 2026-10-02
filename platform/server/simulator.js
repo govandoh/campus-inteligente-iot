@@ -11,10 +11,10 @@ import { BUILDINGS } from './config.js';
 const FW = '1.0.0-sim';
 
 const DEFAULT_NODES = [
-  { id: 'sim-admin-a1', building: 'A', ip: '10.10.3.21', base: 23.2, hum: 48, motionPerMin: 0.35 },
-  { id: 'sim-aulas-b1', building: 'B', ip: '10.10.3.22', base: 25.4, hum: 58, motionPerMin: 1.2 },
-  { id: 'sim-lab-c2', building: 'C', ip: '10.10.3.23', base: 25.6, hum: 46, motionPerMin: 0.7 },
-  { id: 'sim-biblio-d1', building: 'D', ip: '10.10.3.24', base: 22.1, hum: 52, motionPerMin: 0.5 },
+  { id: 'sim-admin-a1', building: 'A', ip: '10.10.2.21', base: 23.2, hum: 48, motionPerMin: 0.35 },
+  { id: 'sim-aulas-b1', building: 'B', ip: '10.10.2.22', base: 25.4, hum: 58, motionPerMin: 1.2 },
+  { id: 'sim-lab-c2', building: 'C', ip: '10.10.2.23', base: 25.6, hum: 46, motionPerMin: 0.7 },
+  { id: 'sim-biblio-d1', building: 'D', ip: '10.10.2.24', base: 22.1, hum: 52, motionPerMin: 0.5 },
 ];
 
 const rand = (a, b) => a + Math.random() * (b - a);

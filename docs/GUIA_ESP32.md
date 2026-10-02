@@ -3,7 +3,7 @@
 Objetivo (requerimiento IoT del enunciado): **un ESP32 con sensor, conectado por Wi‑Fi a la VLAN 60, obtiene IP por DHCP y transmite sus lecturas por MQTT a un servidor que las muestra en un dashboard.** Esta guía cubre las pruebas obligatorias 5, 6 y 7.
 
 ```
-ESP32 (DHT22 + PIR) ──Wi‑Fi CAMPUS‑IOT──▶ AP ──▶ VLAN 60 (10.10.3.0/25) ──▶ Mosquitto :1883 ──▶ Plataforma ──▶ Dashboard
+ESP32 (DHT22 + PIR) ──Wi‑Fi CAMPUS‑IOT──▶ AP ──▶ VLAN 60 (10.10.2.0/25) ──▶ Mosquitto :1883 ──▶ Plataforma ──▶ Dashboard
 ```
 
 ---
@@ -75,7 +75,7 @@ Ajuste del PIR (los dos potenciómetros naranjas): **Tiempo** al mínimo (≈3 s
 #define BUILDING_SLUG  "edificioC"        // el ESP32 está en Laboratorios (topología, sección 5.1)
 #define WIFI_SSID      "CAMPUS-IOT"
 #define WIFI_PASS      "su-clave-wifi"
-#define MQTT_HOST      "10.10.3.10"        // IP de la laptop que corre el broker (paso 5)
+#define MQTT_HOST      "10.10.2.10"        // IP de la laptop que corre el broker (paso 5)
 #define MQTT_USER      "esp32"
 #define MQTT_PASS      "esp32-umg-2026"    // debe coincidir con MQTT_ESP32_PASS de stack/.env
 ```
@@ -93,13 +93,13 @@ Ajuste del PIR (los dos potenciómetros naranjas): **Tiempo** al mínimo (≈3 s
 ```
 === Campus IoT · ESP32 1.0.0 · esp32-lab-c1 ===
 [wifi] Conectando a CAMPUS-IOT....
-[wifi] OK  IP=10.10.3.25  GW=10.10.3.1  MASK=255.255.255.128  RSSI=-58 dBm
-[mqtt] Conectando a 10.10.3.10:1883 como esp32-lab-c1… OK
+[wifi] OK  IP=10.10.2.25  GW=10.10.2.1  MASK=255.255.255.128  RSSI=-58 dBm
+[mqtt] Conectando a 10.10.2.10:1883 como esp32-lab-c1… OK
 [pub] OK  {"node":"esp32-lab-c1","building":"C","temp":24.6,"hum":55.2,"motion":0,...}
 [pir] MOVIMIENTO
 ```
 
-La línea `MASK=255.255.255.128` con IP `10.10.3.x` es la **evidencia de que el ESP32 está en la VLAN 60** (prueba 5). El LED azul queda **encendido fijo** cuando está conectado al broker.
+La línea `MASK=255.255.255.128` con IP `10.10.2.x` es la **evidencia de que el ESP32 está en la VLAN 60** (prueba 5). El LED azul queda **encendido fijo** cuando está conectado al broker.
 
 ---
 
@@ -113,14 +113,14 @@ Packet Tracer no puede dar Wi‑Fi a un dispositivo real, así que el día de la
 |---|---|
 | SSID | `CAMPUS-IOT` (banda **2.4 GHz**) |
 | Seguridad | WPA2‑Personal (AES) |
-| IP LAN del router (gateway) | `10.10.3.1` |
+| IP LAN del router (gateway) | `10.10.2.1` |
 | Máscara | `255.255.255.128` (/25) |
-| Rango DHCP | `10.10.3.2` – `10.10.3.126` |
-| Reserva DHCP para la laptop | `10.10.3.10` (la IP del broker que usa el análisis inicial, sección 7.5) |
+| Rango DHCP | `10.10.2.2` – `10.10.2.126` |
+| Reserva DHCP para la laptop | `10.10.2.10` (laptop‑servidor de la maqueta) |
 
-Así el ESP32 obtiene **exactamente** una IP del plan VLSM de la VLAN 60. En el diseño final el broker vive en la VLAN 50 (`10.10.5.70`) y el SW‑CORE enruta VLAN 60 → 50 con la ACL `IOT-IN`; en la maqueta se simplifica poniendo la laptop‑servidor en el mismo segmento. Explíquelo así en la defensa.
+Así el ESP32 obtiene **exactamente** una IP del plan VLSM de la VLAN 60. En el diseño final el broker es SRV‑SERVICIOS (`10.10.4.2`, VLAN 50) y el SW‑CORE enruta VLAN 60 → 50 con la ACL `ACL-IOT`; en la maqueta se simplifica poniendo la laptop‑servidor en el mismo segmento. Explíquelo así en la defensa.
 
-**Opción B — Hotspot del celular llamado `CAMPUS-IOT`:** funciona igual, pero la IP no será `10.10.3.x` (el dashboard marcará "fuera de 10.10.3.0/25"). En iPhone active *"Maximizar compatibilidad"* para forzar 2.4 GHz.
+**Opción B — Hotspot del celular llamado `CAMPUS-IOT`:** funciona igual, pero la IP no será `10.10.2.x` (el dashboard marcará "fuera de 10.10.2.0/25"). En iPhone active *"Maximizar compatibilidad"* para forzar 2.4 GHz.
 
 En ambos casos, la laptop se conecta a la **misma** red y su IP (ver con `ipconfig`) es la que va en `MQTT_HOST`.
 
@@ -151,7 +151,7 @@ Y marque la red Wi‑Fi como **Privada** (Configuración → Red → Propiedades
 
 ## 7. Verificar (pruebas 5, 6 y 7)
 
-1. **Prueba 5 — ESP32 en VLAN 60:** Monitor serie muestra `IP=10.10.3.x MASK=255.255.255.128`. En el dashboard, tarjeta *Dispositivo* → `VLAN 60 ✓ 10.10.3.0/25`.
+1. **Prueba 5 — ESP32 en VLAN 60:** Monitor serie muestra `IP=10.10.2.x MASK=255.255.255.128`. En el dashboard, tarjeta *Dispositivo* → `VLAN 60 ✓ 10.10.2.0/25`.
 2. **Prueba 6 — ESP32 → servidor:** vea los mensajes llegar al broker:
    ```powershell
    docker exec -it campus-mosquitto mosquitto_sub -u platform -P platform-umg-2026 -t "campus/iot/#" -v
@@ -196,13 +196,13 @@ El mismo firmware corre en <https://wokwi.com> (ESP32 + DHT22 + PIR virtuales). 
    ```
 6. ▶ en Wokwi. En el dashboard aparece `wokwi-lab-c1` con la etiqueta **Wokwi**. Haga clic sobre el DHT22 simulado para mover la temperatura/humedad con los deslizadores y sobre el PIR para simular movimiento.
 
-Nota: en Wokwi la IP será de la red virtual de Wokwi (no `10.10.3.x`); para la prueba 5 use el ESP32 físico o el SBC de Packet Tracer.
+Nota: en Wokwi la IP será de la red virtual de Wokwi (no `10.10.2.x`); para la prueba 5 use el ESP32 físico o el SBC de Packet Tracer.
 
 ---
 
 ## 10. Seguridad del ESP32 (pregunta de defensa)
 
-1. **Segmentación:** vive en la VLAN 60; la ACL `IOT-IN` del SW‑CORE solo le permite DHCP, DNS, NTP y **TCP 1883 hacia el broker**; todo lo demás se deniega y se registra (`log`).
+1. **Segmentación:** vive en la VLAN 60; la ACL `ACL-IOT` del SW‑CORE solo le permite DHCP, DNS, NTP y **TCP 1883 hacia el broker**; todo lo demás se deniega y se registra (`log`).
 2. **Wi‑Fi:** SSID `CAMPUS-IOT` con WPA2/WPA3; en producción, reserva DHCP/MAC por dispositivo.
 3. **MQTT autenticado:** sin acceso anónimo; usuario `esp32` con ACL de mínimo privilegio (solo escribe sus tópicos y solo lee `…/cmd`). Probado: un cliente anónimo recibe *"not authorised"*.
 4. **Credenciales fuera del código:** `config.h` está en `.gitignore`.

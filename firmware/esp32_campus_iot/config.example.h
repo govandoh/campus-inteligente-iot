@@ -14,7 +14,7 @@
 #define WIFI_SSID      "CAMPUS-IOT"
 #define WIFI_PASS      "cambie-esta-clave"
 
-// Broker MQTT (Mosquitto). En el diseño: 10.10.5.70 (VLAN 50, Data Center).
+// Broker MQTT (Mosquitto). En el diseño: SRV-SERVICIOS 10.10.4.2 (VLAN 50, Data Center).
 // En la demo: la IP de la laptop que corre Docker (ver docs/GUIA_ESP32.md, paso 6).
 #define MQTT_HOST      "192.168.1.100"
 #define MQTT_PORT      1883
@@ -22,7 +22,7 @@
 #define MQTT_PASS      "esp32-umg-2026"
 #define TOPIC_ROOT     "campus/iot"        // Wokwi + broker público: "umg-teleco-g5/campus/iot"
 
-// Servidor NTP (en el diseño, el servidor NTP del Data Center: 10.10.5.67)
+// Servidor NTP (en el diseño, el servidor NTP del Data Center: 10.10.4.2)
 #define NTP_SERVER     "pool.ntp.org"
 #define TZ_OFFSET_SEC  (-6 * 3600)         // Guatemala, UTC-6
 

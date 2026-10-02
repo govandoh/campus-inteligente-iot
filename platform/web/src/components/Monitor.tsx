@@ -285,7 +285,6 @@ function SeriesChart({ node, metric }: { node: IoTNode; metric: 'temp' | 'hum' }
 
 // ───────── Recorrido del dato por la red (explica la arquitectura en la defensa) ─────────
 function hopsFor(node: IoTNode) {
-  const b = node.building;
   if (node.source === 'wokwi')
     return [
       { icon: Chip, title: 'ESP32 (Wokwi)', sub: node.id },
@@ -304,12 +303,13 @@ function hopsFor(node: IoTNode) {
       { icon: Server, title: 'Mosquitto', sub: 'republica MQTT' },
       { icon: Shield, title: 'Dashboard', sub: 'SSE en vivo' },
     ];
+  // Ruta real del .pkt: AP-IOT (CAMPUS-IOT) → SW-E4 (VLAN 60) → SW-CORE (ACL-IOT) → SRV-SERVICIOS
   return [
     { icon: Chip, title: 'ESP32', sub: node.ip ?? '—' },
-    { icon: Wifi, title: `AP-${b}1`, sub: 'SSID CAMPUS-IOT' },
-    { icon: Switch, title: `SW-${b}1`, sub: 'VLAN 60 · trunk' },
-    { icon: Shield, title: 'SW-CORE (L3)', sub: 'ACL: solo TCP 1883' },
-    { icon: Server, title: 'Mosquitto', sub: 'VLAN 50 · :1883' },
+    { icon: Wifi, title: 'AP-IOT', sub: 'SSID CAMPUS-IOT' },
+    { icon: Switch, title: 'SW-E4', sub: 'VLAN 60 · trunk' },
+    { icon: Shield, title: 'SW-CORE (L3)', sub: 'ACL-IOT: solo 1883' },
+    { icon: Server, title: 'Broker MQTT', sub: '10.10.4.2:1883' },
     { icon: MonitorIcon, title: 'Plataforma', sub: 'SSE → dashboard' },
   ];
 }

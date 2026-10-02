@@ -10,7 +10,7 @@ Lo que **sí** existe (Packet Tracer 7.2 en adelante) es una salida controlada: 
 
 | Capa | Dónde | Qué demuestra | Pruebas del enunciado |
 |---|---|---|---|
-| **1. Red simulada** | Packet Tracer | Un SBC‑PT (representa al ESP32) conectado por Wi‑Fi a `CAMPUS-IOT`, recibe IP por DHCP en `10.10.3.0/25`; la ACL `IOT-IN` permite solo TCP 1883 hacia el servidor MQTT (10.10.5.70) y bloquea el resto | 1, 3, 5 (dentro de PT) |
+| **1. Red simulada** | Packet Tracer | Un SBC‑PT (representa al ESP32) conectado por Wi‑Fi a `CAMPUS-IOT`, recibe IP por DHCP en `10.10.2.0/25`; la ACL `ACL-IOT` permite solo DHCP, DNS, NTP y TCP 1883 hacia SRV‑SERVICIOS (10.10.4.2) y bloquea el resto de la red interna | 1, 3, 5 (dentro de PT) |
 | **2. Puente de datos** | PT → PC | El script `packet-tracer/sbc_puente_plataforma.py` lee los sensores de PT (temperatura, humedad, movimiento) y los envía a `http://127.0.0.1:3100/api/ingest`; la plataforma los **republica en MQTT** y aparecen en el dashboard con la etiqueta *Packet Tracer* | 6, 7 (con datos de PT) |
 | **3. Dispositivo real** | Fuera de PT | ESP32 físico (o Wokwi) → MQTT → Mosquitto → dashboard | 5, 6, 7 (evidencia principal) |
 
@@ -30,38 +30,55 @@ Lo que **sí** existe (Packet Tracer 7.2 en adelante) es una salida controlada: 
 
 | Prueba del enunciado | Se demuestra con |
 |---|---|
-| 3 · VLAN no autorizadas bloqueadas | Capa 1 (ACL `IOT-IN`, ping del SBC hacia la VLAN 10 falla) |
-| 5 · ESP32 con conectividad en VLAN 60 | Capa 1 (SBC con 10.10.3.x en PT) **y** capa 3 (ESP32 real con 10.10.3.x en el router `CAMPUS-IOT`) |
+| 3 · VLAN no autorizadas bloqueadas | Capa 1 (ACL `ACL-IOT`, ping del SBC hacia la VLAN 10 falla) |
+| 5 · ESP32 con conectividad en VLAN 60 | Capa 1 (SBC con 10.10.2.x en PT) **y** capa 3 (ESP32 real con 10.10.2.x en el router `CAMPUS-IOT`) |
 | 6 · ESP32 → servidor, datos recibidos | Capa 3 (Mosquitto recibe la telemetría) |
 | 7 · Dashboard con datos visibles | Capa 3 (y capa 2 como extra) |
 
-## Capa 1 — Montaje en Packet Tracer
+## Capa 1 — Montaje en Packet Tracer (`packet-tracer/Campus-UMG-Final.pkt`)
 
-1. En el Edificio C (Laboratorios), junto a `AP-C1` (SSID `CAMPUS-IOT`, WPA2‑PSK, VLAN 60), agregue un **SBC‑PT** (`End Devices → Home/IoT → SBC Board`). Nómbrelo `ESP32-LAB-C1`.
-2. SBC → *Config → Interface → Wireless0*: SSID `CAMPUS-IOT`, WPA2‑PSK con la misma clave del AP, IP **DHCP**. Verifique que recibe `10.10.3.x /25` (evidencia de la prueba 5 dentro de PT).
-3. Conecte con cable **IoT Custom Cable** tres sensores al SBC:
+**Lo que ya existía en el `.pkt`:** VLAN 60 en todos los switches, SVI `Vlan60` 10.10.2.1/25 y pool DHCP `VLAN60_IOT` en el SW‑CORE. También la PC `IOT-ESP32` cableada en SW‑E4 Fa0/2 (10.10.2.11) y la `ACL-IOT` escrita **pero sin aplicar**.
+
+**Lo que se agregó con el MCP (ya guardado en el `.pkt`):**
+
+- `AP-IOT` (AccessPoint‑PT), conectado a **SW‑E4 Fa0/11** (puerto en access VLAN 60, encendido).
+- `ESP32-SBC` (SBC‑PT), que ya trae interfaz inalámbrica (`Wireless3`).
+- `AP-E3`, movido de la VLAN 10 a la **VLAN 20** (SSID de personal según el diseño).
+
+**Pasos manuales en Packet Tracer (5 minutos):**
+
+1. **AP-IOT** → *Config → Port 1*: SSID `CAMPUS-IOT`, autenticación **WPA2‑PSK**, clave `IoT-Campus-2026`, cifrado AES.
+2. **ESP32-SBC** → *Config → Wireless3*: SSID `CAMPUS-IOT`, WPA2‑PSK con la misma clave, IP **DHCP**. Debe recibir `10.10.2.x /25` → **captura de la prueba 5 (PT)**.
+3. Agregue tres sensores (*End Devices → Home/IoT*) y conéctelos al SBC con **IoT Custom Cable**:
    - `Temperature Sensor` → **A0**
-   - `Humidity Sensor` → **A1** (si su versión no lo tiene, use un segundo *Temperature Sensor* o un *Potentiometer* y documente la sustitución)
+   - `Humidity Sensor` → **A1** (si su versión no lo tiene, use un segundo *Temperature Sensor* y documente la sustitución)
    - `Motion Detector` → **D0**
-4. En el servidor de la VLAN 50 (`10.10.5.70`, "Mosquitto") habilite el servicio **IoT** si quiere además el registro interno de PT (opcional).
-5. Aplique la ACL en el SW‑CORE (también disponible con botón *Copiar* en la pestaña **Evidencias** del dashboard):
+4. SSID de los otros AP, todos con WPA2‑PSK:
 
-```
-ip access-list extended IOT-IN
- remark IoT -> broker MQTT (Mosquitto 10.10.5.70)
- permit tcp 10.10.3.0 0.0.0.127 host 10.10.5.70 eq 1883
- permit udp any any eq bootps
- permit udp 10.10.3.0 0.0.0.127 host 10.10.5.66 eq domain
- permit udp 10.10.3.0 0.0.0.127 host 10.10.5.67 eq ntp
- deny   ip any any log
-!
-interface Vlan60
- ip access-group IOT-IN in
-```
+   | AP | VLAN del puerto | SSID |
+   |---|---|---|
+   | AP-E1, AP-E2 | 30 | `CAMPUS-STUDENTS` |
+   | AP-E3 | 20 | `CAMPUS-STAFF` |
+   | AP-E4 | 80 | `CAMPUS-GUEST` |
+   | AP-IOT | 60 | `CAMPUS-IOT` |
 
-Prueba de la ACL en PT: desde el SBC, `ping 10.10.4.2` (ADMIN) **falla**; desde un PC de la VLAN 10 hacia el SW‑CORE por SSH **funciona**. Capture ambas.
+5. Pegue en la CLI los bloques de [`packet-tracer/capa1_cli.txt`](../packet-tracer/capa1_cli.txt):
+   - Las **ACL de todas las VLAN aplicadas en las SVI** del SW‑CORE (incluye `ACL-IOT` en `Vlan60`).
+   - La restricción de **SSH** a ADMIN y MGMT en los 6 equipos.
+   - El portfast del puerto del AP‑IOT.
 
-> Nota: en Packet Tracer el SBC no tiene cliente MQTT real; la regla `eq 1883` se evidencia con `show access-lists` (contadores) y la conexión MQTT real se evidencia en la capa 3.
+**Verificación (pruebas 3 y 5):**
+
+| Desde | Hacia | Esperado |
+|---|---|---|
+| ESP32-SBC o IOT-ESP32 | 10.10.4.2 (SRV‑SERVICIOS) | ✔ responde |
+| ESP32-SBC o IOT-ESP32 | 10.10.3.11 (PC‑ADM1) | ✘ bloqueado por `ACL-IOT` |
+| PC-ADM1 | SSH a 10.10.4.33 (SW‑CORE) | ✔ permitido |
+| PC-EST1 | SSH a 10.10.4.33 | ✘ bloqueado |
+
+En el SW‑CORE, `show access-lists ACL-IOT` muestra los contadores de cada regla. Capture todo para `evidencias/`.
+
+> Nota: en Packet Tracer el SBC no tiene cliente MQTT real. La regla `eq 1883` se evidencia con los contadores de `show access-lists`; la conexión MQTT real se evidencia en la capa 3.
 
 ## Capa 2 — Puente de datos PT → plataforma
 

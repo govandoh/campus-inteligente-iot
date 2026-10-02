@@ -1,0 +1,86 @@
+! =====================================================================
+!  Capa 1 (Packet Tracer) — configuración pendiente de pegar en la CLI
+!  Archivo: Campus-UMG-Final.pkt · Direccionamiento REAL del .pkt:
+!    VLAN 60 IoT 10.10.2.0/25 · SRV-SERVICIOS 10.10.4.2 (DNS/NTP/Syslog/MQTT)
+!    VLAN 10 ADMIN 10.10.3.0/25 · VLAN 99 MGMT 10.10.4.32/27
+!  Cómo usar: clic en el equipo → CLI → enable (usuario adminredes) →
+!  configure terminal → pegar el bloque → end → write memory
+! =====================================================================
+
+
+! ---------------------------------------------------------------------
+! 1) SW-CORE — ACL por VLAN (matriz de seguridad) aplicadas en las SVI
+! ---------------------------------------------------------------------
+! IoT: solo DHCP, DNS, NTP, MQTT (1883) y web hacia SRV-SERVICIOS; nada más interno
+no ip access-list extended ACL-IOT
+ip access-list extended ACL-IOT
+ permit udp any any eq bootps
+ permit udp any any eq bootpc
+ permit udp any host 10.10.4.2 eq domain
+ permit udp any host 10.10.4.2 eq 123
+ permit tcp any host 10.10.4.2 eq 1883
+ permit tcp any host 10.10.4.2 eq www
+ permit icmp any host 10.10.4.2
+ deny ip any 10.10.0.0 0.0.255.255
+ permit ip any any
+!
+! Laboratorios: no llegan a la gestión (VLAN 99)
+ip access-list extended ACL-LABORATORIOS
+ permit udp any any eq bootps
+ permit udp any any eq bootpc
+ deny ip any 10.10.4.32 0.0.0.31
+ permit ip any any
+!
+! Voz: DHCP, TFTP/servicios en SRV-SERVICIOS; sin acceso a gestión
+ip access-list extended ACL-VOZ
+ permit udp any any eq bootps
+ permit udp any any eq bootpc
+ permit ip any host 10.10.4.2
+ deny ip any 10.10.4.32 0.0.0.31
+ permit ip any any
+!
+interface Vlan20
+ ip access-group ACL-DOCENTES in
+interface Vlan30
+ ip access-group ACL-ESTUDIANTES in
+interface Vlan40
+ ip access-group ACL-LABORATORIOS in
+interface Vlan60
+ ip access-group ACL-IOT in
+interface Vlan70
+ ip access-group ACL-VOZ in
+interface Vlan80
+ ip access-group ACL-INVITADOS in
+exit
+
+
+! ---------------------------------------------------------------------
+! 2) SSH solo desde ADMIN (VLAN 10) y MGMT (VLAN 99) — prueba 4
+!    Pegar en: R-BORDE, SW-CORE, SW-E1, SW-E2, SW-E3, SW-E4
+! ---------------------------------------------------------------------
+ip access-list standard SSH-GESTION
+ permit 10.10.3.0 0.0.0.127
+ permit 10.10.4.32 0.0.0.31
+ deny any
+line vty 0 4
+ access-class SSH-GESTION in
+ login local
+ transport input ssh
+! (solo en los 2960 SW-E1, SW-E2 y SW-E4, que tienen vty 5-15 con "login" sin clave)
+line vty 5 15
+ access-class SSH-GESTION in
+ login local
+ transport input ssh
+exit
+
+
+! ---------------------------------------------------------------------
+! 3) SW-E4 — puerto del AP-IOT (ya quedó en VLAN 60 por el MCP)
+! ---------------------------------------------------------------------
+interface FastEthernet0/11
+ description AP-IOT CAMPUS-IOT VLAN60
+ switchport mode access
+ switchport access vlan 60
+ spanning-tree portfast
+ no shutdown
+exit

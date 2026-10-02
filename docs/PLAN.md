@@ -17,9 +17,9 @@ Estado al 30 de septiembre de 2026 · Defensa: **sábado 3 de octubre de 2026**.
 ## 2. Arquitectura
 
 ```
-                        ┌──────────── Data Center · VLAN 50 (10.10.5.64/26) ────────────┐
+                        ┌──────────── Data Center · VLAN 50 (10.10.4.0/27) ────────────┐
 ESP32 + DHT22 + PIR     │                                                              │
- (VLAN 60, 10.10.3.x) ──┼─ MQTT :1883 ─▶ Mosquitto ──▶ Plataforma (Node.js) ──SSE──▶ Navegador
+ (VLAN 60, 10.10.2.x) ──┼─ MQTT :1883 ─▶ Mosquitto ──▶ Plataforma (Node.js) ──SSE──▶ Navegador
 Wokwi ─▶ broker público ┼─ bridge ─────▶    │           · SQLite (historial)          (dashboard)
 Packet Tracer (SBC) ────┼─ HTTP /api/ingest ─────────▶  · alertas / umbrales
 Simulador (4 nodos) ────┼─ MQTT ───────▶    │           · comandos → …/cmd
@@ -35,17 +35,16 @@ Simulador (4 nodos) ────┼─ MQTT ───────▶    │     
 - **SQLite** integrado en Node 24: historial sin instalar otra base de datos.
 - **Docker Compose**: todo el stack se levanta con un comando, igual en cualquier laptop del equipo.
 
-**Direcciones de servicio propuestas (VLAN 50, 10.10.5.64/26):**
+**Direccionamiento real del `.pkt` (fuente de verdad):** VLAN 60 IoT = `10.10.2.0/25` (gateway 10.10.2.1). VLAN 50 Servidores = `10.10.4.0/27`.
 
 | Servicio | IP |
 |---|---|
-| Gateway VLAN 50 | 10.10.5.65 |
-| DHCP / DNS | 10.10.5.66 |
-| NTP / Syslog | 10.10.5.67 |
-| **Mosquitto (broker MQTT)** | **10.10.5.70** |
-| Plataforma / Grafana | 10.10.5.71 |
+| Gateway VLAN 50 | 10.10.4.1 |
+| **SRV-SERVICIOS**: DNS, NTP, Syslog y **broker MQTT** | **10.10.4.2** |
+| SRV-WEB | 10.10.4.3 |
+| DHCP (todas las VLAN) | SW-CORE (pools locales) |
 
-**Corrección al análisis inicial:** el código de ejemplo (sección 7.5) pone el broker en `10.10.3.10`, dentro de la VLAN 60. El resto del documento (sección 5.1 y la matriz de seguridad) lo ubica en la **VLAN 50**. Se adopta **10.10.5.70** para el diseño; `10.10.3.10` se usa solo en la maqueta de la defensa (laptop‑servidor en la red `CAMPUS-IOT`, ver GUIA_ESP32 §5).
+**Aviso de consistencia:** el `.pkt` usa el VLSM **sin** el 10 % de crecimiento (por ejemplo, ESTUDIANTES /24 e IoT 10.10.2.0/25). La tabla VLSM v5 del análisis inicial (con crecimiento) **no** coincide con el `.pkt`. Se decidió mantener el `.pkt` y alinear el documento técnico y la hoja VLSM a él. Responsable: Sergio.
 
 **Tópicos MQTT:** `campus/iot/<edificio>/<nodo>/{telemetry|status|motion|cmd|ack}`
 Ejemplo: `campus/iot/edificioC/esp32-lab-c1/telemetry` → `{"temp":24.6,"hum":55.2,"motion":0,"rssi":-61,"ip":"10.10.3.25",…}`
@@ -54,7 +53,7 @@ Ejemplo: `campus/iot/edificioC/esp32-lab-c1/telemetry` → `{"temp":24.6,"hum":5
 
 PT no deja entrar ni salir tráfico real de su topología. Solución en tres capas **que se suman, no se reemplazan** (detalle en [PACKET_TRACER_IOT.md](PACKET_TRACER_IOT.md)):
 
-1. **Dentro de PT (obligatoria)**: SBC‑PT en `CAMPUS-IOT` con IP DHCP de la VLAN 60 + ACL `IOT-IN` → pruebas de conectividad y bloqueo.
+1. **Dentro de PT (obligatoria)**: SBC‑PT en `CAMPUS-IOT` con IP DHCP de la VLAN 60 + ACL `ACL-IOT` → pruebas de conectividad y bloqueo.
 2. **Puente PT → plataforma (extra)** con `RealHTTPClient` → los sensores de PT aparecen en el dashboard real.
 3. **ESP32 físico (obligatoria; Wokwi si falla el hardware)** → flujo MQTT real, evidencia principal de las pruebas 6 y 7.
 
@@ -73,7 +72,7 @@ Responsable principal: **Jonathan** (IoT y documentación). Apoyo: **Diego** (mo
 
 ## 5. Guion de la demo (3 minutos)
 
-1. **Arquitectura (30 s)** — Pestaña *Monitoreo* → tarjeta *Recorrido del dato*: ESP32 → AP‑C1 `CAMPUS-IOT` → SW‑C1 VLAN 60 → SW‑CORE (ACL solo 1883) → Mosquitto VLAN 50 → plataforma. El punto naranja recorre la ruta con cada mensaje.
+1. **Arquitectura (30 s)** — Pestaña *Monitoreo* → tarjeta *Recorrido del dato*: ESP32 → AP‑IOT `CAMPUS-IOT` → SW‑E4 VLAN 60 → SW‑CORE (ACL-IOT, solo 1883) → broker 10.10.4.2 (VLAN 50) → plataforma. El punto naranja recorre la ruta con cada mensaje.
 2. **Datos en vivo (45 s)** — Tomar el DHT22 con los dedos: la temperatura sube en tiempo real. Pasar la mano frente al PIR: el radar se activa y queda en el registro.
 3. **Alertas (30 s)** — *Controles → Umbrales*: bajar la temperatura máxima por debajo del valor actual → toast rojo y evento en el registro. Restaurar.
 4. **Control remoto (20 s)** — *Identificar (LED)*: el LED del ESP32 parpadea (comando MQTT de bajada).
