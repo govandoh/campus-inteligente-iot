@@ -25,7 +25,10 @@
 
 #define FW_VERSION "1.0.0"
 
-DHT dht(DHT_PIN, DHT22);
+#ifndef DHT_TYPE
+#define DHT_TYPE DHT22   // DHT11 si el sensor es azul; se define en config.h
+#endif
+DHT dht(DHT_PIN, DHT_TYPE);
 WiFiClient net;
 PubSubClient mqtt(net);
 

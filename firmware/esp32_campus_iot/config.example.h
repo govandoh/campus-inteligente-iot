@@ -27,7 +27,8 @@
 #define TZ_OFFSET_SEC  (-6 * 3600)         // Guatemala, UTC-6
 
 // Hardware
-#define DHT_PIN        4                   // DATA del DHT22
+#define DHT_PIN        4                   // DATA del sensor
+#define DHT_TYPE       DHT22               // DHT22 (blanco) o DHT11 (azul)
 #define PIR_PIN        27                  // OUT del HC-SR501
 #define LED_PIN        2                   // LED azul integrado del DevKit V1
 #define PUBLISH_EVERY_S 5                  // intervalo por defecto (el dashboard lo puede cambiar)
